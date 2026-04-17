@@ -80,9 +80,9 @@ export default function DateTimePicker({ value, onChange, label }: DateTimePicke
     }
     setError('');
     const newDate = new Date(year, month, displayDate.getDate(), hour, minute);
-    // Format as local time without UTC conversion: YYYY-MM-DDTHH:mm
+    // Format as local time without UTC conversion: YYYY-MM-DDTHH:mm:ss
     const pad = (n: number) => String(n).padStart(2, '0');
-    const localTimeString = `${year}-${pad(month + 1)}-${pad(newDate.getDate())}T${pad(hour)}:${pad(minute)}`;
+    const localTimeString = `${year}-${pad(month + 1)}-${pad(newDate.getDate())}T${pad(hour)}:${pad(minute)}:00`;
     onChange(localTimeString);
     setIsOpen(false);
   };
