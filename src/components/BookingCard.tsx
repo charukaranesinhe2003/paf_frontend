@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import StatusBadge from './StatusBadge';
+import EditBookingModal from './EditBookingModal';
 import { approveOrReject, cancelBooking } from '../services/bookingApi';
+import { useToast } from './ToastContainer';
 import axios from 'axios';
 
 interface Booking {
@@ -11,6 +13,7 @@ interface Booking {
   resourceName: string;
   startTime: string;
   endTime: string;
+  attendeeCount: number;
   purpose?: string;
   status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
   adminNote?: string;
@@ -32,30 +35,40 @@ function fmt(dt: string | undefined): string {
 }
 
 export default function BookingCard({ booking, isAdmin, currentUserId, onRefresh }: BookingCardProps) {
-  const [note, setNote]       = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState('');
+  const [note, setNote]              = useState('');
+  const [loading, setLoading]        = useState(false);
+  const [error, setError]            = useState('');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { showToast } = useToast();
 
   const handleAction = async (action: string) => {
-    setLoading(true); setError('');
+    setLoading(true); 
+    setError('');
     try {
       await approveOrReject(booking.id, { action, adminNote: note });
+      const actionText = action.charAt(0) + action.slice(1).toLowerCase();
+      showToast(`Booking #${booking.id} ${actionText.toLowerCase()}ed successfully`, 'success');
+      setNote('');
       onRefresh();
     } catch (e) {
       const errorMsg = axios.isAxiosError(e) ? e.response?.data?.message : 'Action failed';
       setError(errorMsg || 'Action failed');
+      showToast(errorMsg || 'Action failed', 'error');
     } finally { setLoading(false); }
   };
 
   const handleCancel = async () => {
     if (!window.confirm('Cancel this booking?')) return;
-    setLoading(true); setError('');
+    setLoading(true); 
+    setError('');
     try {
       await cancelBooking(booking.id, currentUserId);
+      showToast(`Booking #${booking.id} cancelled successfully`, 'success');
       onRefresh();
     } catch (e) {
       const errorMsg = axios.isAxiosError(e) ? e.response?.data?.message : 'Cancel failed';
       setError(errorMsg || 'Cancel failed');
+      showToast(errorMsg || 'Cancel failed', 'error');
     } finally { setLoading(false); }
   };
 
@@ -107,11 +120,23 @@ export default function BookingCard({ booking, isAdmin, currentUserId, onRefresh
       {!isAdmin && currentUserId === booking.userId &&
         (booking.status === 'PENDING' || booking.status === 'APPROVED') && (
         <div className="booking-actions">
+          {booking.status === 'PENDING' && (
+            <button className="btn btn-primary btn-sm" onClick={() => setIsEditModalOpen(true)} disabled={loading}>
+              ✏️ Edit Booking
+            </button>
+          )}
           <button className="btn btn-ghost btn-sm" onClick={handleCancel} disabled={loading}>
             🚫 Cancel Booking
           </button>
         </div>
       )}
+
+      <EditBookingModal
+        booking={booking}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSuccess={onRefresh}
+      />
     </div>
   );
 }
