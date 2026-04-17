@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useCallback } from "react";
+import axios from "axios";
 import { getBookingsByUser } from "@/services/bookingApi";
 import BookingCard from "@/components/BookingCard";
 
@@ -12,6 +13,9 @@ type Booking = {
   endTime: string;
   purpose?: string;
   status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+  adminNote?: string;
+  createdAt: string;
+  updatedAt: string;
 };
 
 export default function MyBookings() {
@@ -28,7 +32,8 @@ export default function MyBookings() {
       const res = await getBookingsByUser(uid);
       setData(res.data);
     } catch (e) {
-      setError("Could not load bookings.");
+      const errorMsg = axios.isAxiosError(e) ? e.response?.data?.message : "Could not load bookings.";
+      setError(errorMsg || "Could not load bookings.");
     } finally {
       setLoading(false);
     }
@@ -84,7 +89,13 @@ export default function MyBookings() {
       )}
 
       {data.map((b) => (
-        <BookingCard key={b.id} booking={b} />
+        <BookingCard 
+          key={b.id} 
+          booking={b} 
+          isAdmin={false}
+          currentUserId={userId}
+          onRefresh={() => fetchBookings(userId)}
+        />
       ))}
     </div>
   );
