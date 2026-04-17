@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:8081/api/bookings';
+// Use relative URL to Next.js API route (which proxies to backend)
+const BASE_URL = '/api/bookings';
 
 const api = axios.create({ baseURL: BASE_URL });
 
