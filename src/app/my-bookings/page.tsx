@@ -60,8 +60,8 @@ function MyBookingsContent() {
     try {
       const res = await getBookingsByUser(uid);
       setData(res.data || []);
-    } catch (e) {
-      const errorMsg = axios.isAxiosError(e) ? e.response?.data?.message : "Could not load bookings.";
+    } catch (e: unknown) {
+      const errorMsg = axios.isAxiosError(e) ? (e.response?.data?.message as string | undefined) : undefined;
       setError(errorMsg || "Could not load bookings.");
     } finally {
       setLoading(false);
