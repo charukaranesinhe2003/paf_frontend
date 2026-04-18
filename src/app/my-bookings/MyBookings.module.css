@@ -249,8 +249,8 @@
   border-radius: 10px;
   background: #f3f8f7;
   border: 1px solid #d7e5e0;
-  padding: 4px;
-  gap: 4px;
+  padding: 5px;
+  gap: 6px;
 }
 
 .viewBtn {
@@ -258,7 +258,9 @@
   background: transparent;
   color: #446173;
   font-weight: 700;
-  padding: 0.5rem 0.85rem;
+  font-size: 0.96rem;
+  min-height: 42px;
+  padding: 0.64rem 1.05rem;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;

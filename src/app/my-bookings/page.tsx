@@ -190,7 +190,6 @@ function MyBookingsContent() {
 
         {!loading && userId && data.length > 0 && (
           <div className={styles.controlBar}>
-            <p className={styles.controlHint}>View mode</p>
             <div className={styles.viewToggle}>
             <button
               type="button"
