@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const BACKEND_URL = 'http://localhost:8082/api/bookings';
+const BACKEND_URL = 'http://localhost:8081/api/bookings';
 
 async function parseBackendBody(response: Response) {
   const text = await response.text();
