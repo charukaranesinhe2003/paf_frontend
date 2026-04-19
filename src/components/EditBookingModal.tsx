@@ -5,7 +5,6 @@ import axios from 'axios';
 import { updateBooking } from '@/services/bookingApi';
 import DateTimePicker from '@/components/DateTimePicker';
 import { useToast } from '@/components/ToastContainer';
-import styles from './EditBookingModal.module.css';
 
 interface EditBookingModalProps {
   booking: {
@@ -38,26 +37,19 @@ const RESOURCES = [
   { id: 'meeting-3', name: 'Meeting Room 3', capacity: 8 },
 ];
 
-const MIN_BOOKING_DURATION = 30; // minutes
-const MAX_BOOKING_DURATION = 480; // 8 hours in minutes
+const MIN_BOOKING_DURATION = 30;
+const MAX_BOOKING_DURATION = 480;
 
 function normalizeLocalDateTime(value: string): string {
   const trimmed = value.trim();
   const hasSeconds = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(trimmed);
   if (hasSeconds) return trimmed;
-
   const hasMinutePrecision = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(trimmed);
   if (hasMinutePrecision) return `${trimmed}:00`;
-
   return trimmed;
 }
 
-export default function EditBookingModal({
-  booking,
-  isOpen,
-  onClose,
-  onSuccess,
-}: EditBookingModalProps) {
+export default function EditBookingModal({ booking, isOpen, onClose, onSuccess }: EditBookingModalProps) {
   const { showToast } = useToast();
   const [form, setForm] = useState({
     startTime: booking.startTime,
@@ -69,7 +61,6 @@ export default function EditBookingModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Find resource capacity
   const resourceCapacity = useMemo(() => {
     const resource = RESOURCES.find(r => r.name === booking.resourceName);
     return resource?.capacity || 100;
@@ -77,115 +68,59 @@ export default function EditBookingModal({
 
   const calculateDuration = () => {
     if (!form.startTime || !form.endTime) return null;
-    const start = new Date(form.startTime);
-    const end = new Date(form.endTime);
-    const diffMs = end.getTime() - start.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    return diffMins;
+    const diffMs = new Date(form.endTime).getTime() - new Date(form.startTime).getTime();
+    return Math.floor(diffMs / 60000);
   };
 
   const duration = calculateDuration();
 
   const validateForm = (): boolean => {
     const errors: ValidationErrors = {};
-
-    // Start time validation
     if (!form.startTime) {
       errors.startTime = 'Start time is required';
-    } else {
-      const startDate = new Date(form.startTime);
-      const now = new Date();
-      if (startDate <= now) {
-        errors.startTime = 'Start time must be in the future';
-      }
+    } else if (new Date(form.startTime) <= new Date()) {
+      errors.startTime = 'Start time must be in the future';
     }
-
-    // End time validation
     if (!form.endTime) {
       errors.endTime = 'End time is required';
-    } else if (form.startTime && form.endTime) {
-      const startDate = new Date(form.startTime);
-      const endDate = new Date(form.endTime);
-      if (endDate <= startDate) {
-        errors.endTime = 'End time must be after start time';
-      }
+    } else if (form.startTime && new Date(form.endTime) <= new Date(form.startTime)) {
+      errors.endTime = 'End time must be after start time';
     }
-
-    // Duration validation
     if (duration !== null) {
-      if (duration < MIN_BOOKING_DURATION) {
-        errors.startTime = `Booking must be at least ${MIN_BOOKING_DURATION} minutes`;
-      }
-      if (duration > MAX_BOOKING_DURATION) {
-        errors.endTime = `Booking cannot exceed ${MAX_BOOKING_DURATION} minutes`;
-      }
+      if (duration < MIN_BOOKING_DURATION) errors.startTime = `Booking must be at least ${MIN_BOOKING_DURATION} minutes`;
+      if (duration > MAX_BOOKING_DURATION) errors.endTime = `Booking cannot exceed ${MAX_BOOKING_DURATION} minutes`;
     }
-
-    // Attendee count validation
-    const attendeeCount = parseInt(form.attendeeCount, 10);
-    if (!form.attendeeCount || attendeeCount < 1) {
-      errors.attendeeCount = 'Attendee count must be at least 1';
-    }
-    if (attendeeCount > resourceCapacity) {
-      errors.attendeeCount = `Attendee count cannot exceed ${resourceCapacity} for ${booking.resourceName}`;
-    }
-
+    const count = parseInt(form.attendeeCount, 10);
+    if (!form.attendeeCount || count < 1) errors.attendeeCount = 'Attendee count must be at least 1';
+    if (count > resourceCapacity) errors.attendeeCount = `Cannot exceed ${resourceCapacity} for ${booking.resourceName}`;
     setValidationErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setLoading(true);
     setError('');
-
     try {
-      const payload = {
+      await updateBooking(booking.id, {
         startTime: normalizeLocalDateTime(form.startTime),
         endTime: normalizeLocalDateTime(form.endTime),
         attendeeCount: parseInt(form.attendeeCount, 10),
         purpose: form.purpose || undefined,
-      };
-
-      await updateBooking(booking.id, payload, booking.userId);
-
+      }, booking.userId);
       showToast(`Booking #${booking.id} updated successfully!`, 'success', 4000);
       onSuccess();
       onClose();
-    } catch (e: any) {
+    } catch (e: unknown) {
       let msg = 'Failed to update booking';
-      let details = '';
-
       if (axios.isAxiosError(e) && e.response) {
-        const { status, data: responseData } = e.response;
-
-        if (status === 400 || status === 422) {
-          msg = 'Validation error';
-          if (typeof responseData === 'string') {
-            details = responseData;
-          } else if (responseData?.message) {
-            details = responseData.message;
-          }
-        } else if (status === 409) {
-          msg = 'Booking conflict: Resource is already booked for this time';
-          details = responseData?.message || '';
-        } else if (status === 403) {
-          msg = 'You can only update your own bookings';
-        } else if (status === 500) {
-          msg = 'Server error. Please try again later.';
-          if (responseData?.message) {
-            details = responseData.message;
-          }
-        }
+        const { status, data } = e.response;
+        if (status === 409) msg = 'Booking conflict: Resource is already booked for this time';
+        else if (status === 403) msg = 'You can only update your own bookings';
+        else if (data?.message) msg = data.message;
       }
-
-      const errorMsg = details ? `${msg}: ${details}` : msg;
-      setError(errorMsg);
+      setError(msg);
       showToast(msg, 'error');
     } finally {
       setLoading(false);
@@ -195,103 +130,128 @@ export default function EditBookingModal({
   if (!isOpen) return null;
 
   return (
-    <div className={styles.overlay} onClick={onClose}>
-      <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-        <div className={styles.header}>
-          <h2>Edit Booking #{booking.id}</h2>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="Close">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-7 py-5 border-b border-gray-100">
+          <h2 className="text-xl font-bold text-gray-900">Edit Booking #{booking.id}</h2>
+          <button
+            className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition"
+            onClick={onClose}
+            aria-label="Close"
+          >
             ✕
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
-          {error && <div className={styles.errorAlert}>{error}</div>}
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="px-7 py-6 flex flex-col gap-5">
+          {error && (
+            <div className="rounded-lg bg-red-50 border-l-4 border-red-500 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Resource</label>
-            <div className={styles.readonlyField}>{booking.resourceName}</div>
-            <small className={styles.hint}>Resource cannot be changed. Cancel and create a new booking to change resources.</small>
+          {/* Resource (read-only) */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Resource</label>
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500">
+              {booking.resourceName}
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              Resource cannot be changed. Cancel and create a new booking to change resources.
+            </p>
           </div>
 
-          <div className={styles.dateFields}>
-            <div className={styles.formGroup}>
+          {/* Date fields */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
               <DateTimePicker
                 label="Start Time"
                 value={form.startTime}
-                onChange={(value) => {
+                onChange={value => {
                   setForm(f => ({ ...f, startTime: value }));
                   setValidationErrors(v => ({ ...v, startTime: undefined }));
                 }}
               />
               {validationErrors.startTime && (
-                <span className={styles.error}>{validationErrors.startTime}</span>
+                <p className="mt-1 text-xs text-red-600">{validationErrors.startTime}</p>
               )}
             </div>
-
-            <div className={styles.formGroup}>
+            <div>
               <DateTimePicker
                 label="End Time"
                 value={form.endTime}
-                onChange={(value) => {
+                onChange={value => {
                   setForm(f => ({ ...f, endTime: value }));
                   setValidationErrors(v => ({ ...v, endTime: undefined }));
                 }}
               />
               {validationErrors.endTime && (
-                <span className={styles.error}>{validationErrors.endTime}</span>
+                <p className="mt-1 text-xs text-red-600">{validationErrors.endTime}</p>
               )}
             </div>
           </div>
 
-          {duration !== null && (
-            <div className={styles.durationDisplay}>
-              Duration: <strong>{duration} minutes</strong> ({(duration / 60).toFixed(1)} hours)
+          {/* Duration display */}
+          {duration !== null && duration > 0 && (
+            <div className="rounded-lg bg-blue-50 border-l-4 border-blue-500 px-4 py-2.5 text-sm text-blue-700 font-medium">
+              Duration: {duration} minutes ({(duration / 60).toFixed(1)} hours)
             </div>
           )}
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Attendee Count</label>
+          {/* Attendee count */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Attendee Count</label>
             <input
               type="number"
               min="1"
               max={resourceCapacity}
               value={form.attendeeCount}
-              onChange={(e) => {
+              onChange={e => {
                 setForm(f => ({ ...f, attendeeCount: e.target.value }));
                 setValidationErrors(v => ({ ...v, attendeeCount: undefined }));
               }}
-              className={styles.input}
+              className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500"
             />
-            <small className={styles.hint}>Max capacity for {booking.resourceName}: {resourceCapacity}</small>
+            <p className="mt-1 text-xs text-gray-400">Max capacity for {booking.resourceName}: {resourceCapacity}</p>
             {validationErrors.attendeeCount && (
-              <span className={styles.error}>{validationErrors.attendeeCount}</span>
+              <p className="mt-1 text-xs text-red-600">{validationErrors.attendeeCount}</p>
             )}
           </div>
 
-          <div className={styles.formGroup}>
-            <label className={styles.label}>Purpose</label>
+          {/* Purpose */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1">Purpose</label>
             <textarea
               value={form.purpose}
-              onChange={(e) => setForm(f => ({ ...f, purpose: e.target.value }))}
-              className={styles.textarea}
+              onChange={e => setForm(f => ({ ...f, purpose: e.target.value }))}
               placeholder="What is this booking for?"
               rows={3}
+              className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500 resize-none"
             />
           </div>
 
-          <div className={styles.actions}>
+          {/* Actions */}
+          <div className="flex gap-3 pt-4 border-t border-gray-100">
             <button
               type="button"
               onClick={onClose}
-              className={styles.cancelBtn}
               disabled={loading}
+              className="flex-1 rounded-xl border border-gray-200 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60 transition"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className={styles.submitBtn}
               disabled={loading}
+              className="flex-1 rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 transition"
             >
               {loading ? 'Updating...' : 'Update Booking'}
             </button>

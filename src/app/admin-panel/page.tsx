@@ -6,7 +6,9 @@ import BookingCard from "@/components/BookingCard";
 import ToastContainer from "@/components/ToastContainer";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/context/AuthContext";
-import styles from "./AdminPanel.module.css";
+import PageShell from "@/components/PageShell";
+import SectionHeader from "@/components/SectionHeader";
+import StatCard from "@/components/StatCard";
 
 type Status = "ALL" | "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 
@@ -110,86 +112,84 @@ function AdminPanelContent() {
 
   return (
     <ToastContainer>
-      <div className={styles.pageShell}>
-        <div className={styles.backdropOrbA}></div>
-        <div className={styles.backdropOrbB}></div>
+      <PageShell>
+        <SectionHeader
+          title="Admin Panel"
+          subtitle="Review incoming requests, handle approvals, and monitor booking activity in real time."
+        />
 
-        <div className={styles.container}>
-          <section className={styles.headerCard}>
-            <div>
-              <h1 className={styles.pageTitle}>Admin Panel</h1>
-              <p className={styles.subtitle}>Review incoming requests, handle approvals, and monitor booking activity in real time.</p>
-            </div>
-          </section>
-
-          <section className={styles.analyticsGrid}>
-            <div className={`${styles.statCard} ${styles.statCardPrimary}`}>
-              <div className={styles.statLabel}>Total Bookings</div>
-              <div className={styles.statValue}>{analytics.total}</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Pending</div>
-              <div className={`${styles.statValue} ${styles.valuePending}`}>{analytics.pending}</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Approved</div>
-              <div className={`${styles.statValue} ${styles.valueApproved}`}>{analytics.approved}</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Rejected</div>
-              <div className={`${styles.statValue} ${styles.valueRejected}`}>{analytics.rejected}</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Cancelled</div>
-              <div className={`${styles.statValue} ${styles.valueCancelled}`}>{analytics.cancelled}</div>
-            </div>
-            <div className={styles.statCard}>
-              <div className={styles.statLabel}>Most Used Resource</div>
-              <div className={styles.resourceValue}>{analytics.mostUsedResource}</div>
-            </div>
-          </section>
-
-          <section className={styles.tabSection}>
-            <p className={styles.tabHint}>Filter by status</p>
-            <div className={styles.tabBar}>
-              {TABS.map((t) => (
-                <button
-                  key={t}
-                  className={`${styles.tabBtn} ${tab === t ? styles.tabBtnActive : ""}`}
-                  onClick={() => setTab(t)}
-                >
-                  <span>{t}</span>
-                  <strong className={styles.tabCount}>{tabCount(t)}</strong>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {error && <div className={styles.errorBox}>{error}</div>}
-          {loading && <div className={styles.loader}>Loading bookings...</div>}
-
-          {!loading && data.length === 0 && (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>0</div>
-              <p>No bookings with status <strong>{tab}</strong>.</p>
-            </div>
-          )}
-
-          {!loading && data.length > 0 && (
-            <div className={styles.listWrap}>
-              {data.map((b) => (
-                <BookingCard
-                  key={b.id}
-                  booking={b}
-                  isAdmin={true}
-                  currentUserId={user?.userId?.toString() ?? ""}
-                  onRefresh={() => fetchBookings(tab)}
-                />
-              ))}
-            </div>
-          )}
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6 mb-6">
+          <StatCard label="Total Bookings" value={analytics.total} primary color="blue" />
+          <StatCard label="Pending"         value={analytics.pending}   color="yellow" />
+          <StatCard label="Approved"        value={analytics.approved}  color="green" />
+          <StatCard label="Rejected"        value={analytics.rejected}  color="red" />
+          <StatCard label="Cancelled"       value={analytics.cancelled} color="gray" />
+          <StatCard label="Top Resource"    value={analytics.mostUsedResource} color="blue" />
         </div>
-      </div>
+
+        {/* Tab bar */}
+        <div className="mb-6 rounded-2xl bg-white border border-gray-200 p-4 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Filter by status</p>
+          <div className="flex flex-wrap gap-2">
+            {TABS.map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  tab === t
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {t}
+                <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${
+                  tab === t ? "bg-white/20 text-white" : "bg-white text-gray-600"
+                }`}>
+                  {tabCount(t)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mb-4 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <div className="rounded-2xl bg-white border border-gray-200 p-10 text-center text-gray-500 shadow-sm">
+            Loading bookings...
+          </div>
+        )}
+
+        {/* Empty */}
+        {!loading && data.length === 0 && (
+          <div className="rounded-2xl bg-white border border-gray-200 p-16 text-center shadow-sm">
+            <p className="text-4xl mb-3">📋</p>
+            <p className="text-gray-500">No bookings with status <strong>{tab}</strong>.</p>
+          </div>
+        )}
+
+        {/* Booking list */}
+        {!loading && data.length > 0 && (
+          <div className="flex flex-col gap-3">
+            {data.map((b) => (
+              <BookingCard
+                key={b.id}
+                booking={b}
+                isAdmin={true}
+                currentUserId={user?.userId?.toString() ?? ""}
+                onRefresh={() => fetchBookings(tab)}
+              />
+            ))}
+          </div>
+        )}
+      </PageShell>
     </ToastContainer>
   );
 }

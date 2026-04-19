@@ -8,7 +8,6 @@ import DateTimePicker from '@/components/DateTimePicker';
 import ToastContainer, { useToast } from '@/components/ToastContainer';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
-import styles from './booking.module.css';
 
 interface BookingForm {
   userId: string;
@@ -389,276 +388,175 @@ function CreateBookingContent() {
   };
 
   return (
-    <div className={styles.pageContainer}>
-      <div className={styles.header}>
-        <h1 className={styles.pageTitle}>
-          Create New <span className={styles.highlight}>Booking</span>
-        </h1>
-        <p className={styles.subtitle}>Fill in the details below to request a resource booking</p>
-      </div>
+    <div className="min-h-screen bg-gray-100 px-4 py-8">
+      <div className="mx-auto max-w-5xl">
+        {/* Page header */}
+        <div className="mb-6 rounded-2xl bg-white p-6 shadow-sm border border-gray-200">
+          <h1 className="text-2xl font-bold text-gray-800">
+            Create New <span className="text-blue-600">Booking</span>
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">Fill in the details below to request a resource booking</p>
+        </div>
 
-      <div className={styles.mainContent}>
         {/* Success Modal */}
         {showSuccessModal && (
-          <div className={styles.successModal}>
-            <div className={styles.modalContent}>
-              <div className={styles.successIcon}>✓</div>
-              <h2>Booking Submitted Successfully!</h2>
-              <p>Booking ID: <strong>#{bookingId}</strong></p>
-              <p className={styles.statusText}>Status: <span className={styles.pendingBadge}>PENDING</span></p>
-              <p className={styles.description}>Your booking request is awaiting admin approval.</p>
-              <p className={styles.redirectText}>Redirecting to your bookings...</p>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+            <div className="w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-2xl">
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-2xl text-emerald-600">✓</div>
+              <h2 className="text-lg font-bold text-gray-900 mb-2">Booking Submitted!</h2>
+              <p className="text-sm text-gray-600 mb-1">Booking ID: <strong>#{bookingId}</strong></p>
+              <span className="inline-block rounded-full bg-amber-100 text-amber-700 px-3 py-1 text-xs font-semibold mb-3">PENDING</span>
+              <p className="text-xs text-gray-400">Redirecting to your bookings...</p>
             </div>
           </div>
         )}
 
-        {/* Alert Messages */}
+        {/* Error alert */}
         {error && (
-          <div className={styles.alertError}>
-            <span className={styles.alertIcon}>⚠️</span>
-            <div className={styles.alertContent}>
+          <div className="mb-4 flex items-start gap-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3">
+            <span className="text-red-500 font-bold">⚠️</span>
+            <div className="flex-1 text-sm text-red-700">
               <strong>Error</strong>
-              <p>{error}</p>
+              <p className="mt-0.5 whitespace-pre-wrap">{error}</p>
             </div>
-            <button
-              className={styles.alertClose}
-              onClick={() => setError('')}
-              aria-label="Close error"
-            >
-              ×
-            </button>
+            <button onClick={() => setError('')} className="text-red-400 hover:text-red-600 text-lg leading-none" aria-label="Close">×</button>
           </div>
         )}
 
-        {success && !showSuccessModal && (
-          <div className={styles.alertSuccess}>
-            <span className={styles.alertIcon}>✓</span>
-            <div className={styles.alertContent}>
-              <strong>Success</strong>
-              <p>{success}</p>
+        {/* 2-column layout */}
+        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+          {/* Sidebar */}
+          <aside className="rounded-2xl bg-white p-6 shadow-sm border border-gray-200 h-fit">
+            <h2 className="text-base font-bold text-gray-800 mb-2">Plan Smarter</h2>
+            <p className="text-sm text-gray-500 mb-4">Request a resource quickly, avoid conflicts, and get faster approval.</p>
+            <div className="flex flex-wrap gap-2 mb-5">
+              {['Fast Request', 'Capacity Checked', 'Conflict Detection'].map(p => (
+                <span key={p} className="rounded-full bg-blue-50 text-blue-700 px-3 py-1 text-xs font-semibold">{p}</span>
+              ))}
             </div>
-          </div>
-        )}
-
-        <div className={styles.layoutGrid}>
-          <aside className={styles.sidePanel}>
-            <h2 className={styles.sideTitle}>Plan Smarter</h2>
-            <p className={styles.sideText}>
-              Use this form to request a resource quickly, avoid conflicts, and get faster approval.
-            </p>
-
-            <div className={styles.pillList}>
-              <span className={styles.pill}>Fast Request</span>
-              <span className={styles.pill}>Capacity Checked</span>
-              <span className={styles.pill}>Conflict Detection</span>
-            </div>
-
-            <div className={styles.stepItem}>
-              <span className={styles.stepNumber}>1</span>
-              <span className={styles.stepText}>Enter requester and contact details</span>
-            </div>
-            <div className={styles.stepItem}>
-              <span className={styles.stepNumber}>2</span>
-              <span className={styles.stepText}>Select resource, attendees, and time</span>
-            </div>
-            <div className={styles.stepItem}>
-              <span className={styles.stepNumber}>3</span>
-              <span className={styles.stepText}>Submit and wait for admin approval</span>
-            </div>
+            {[
+              'Enter requester and contact details',
+              'Select resource, attendees, and time',
+              'Submit and wait for admin approval',
+            ].map((step, i) => (
+              <div key={i} className="flex items-start gap-3 mb-3">
+                <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">{i + 1}</span>
+                <span className="text-sm text-gray-600">{step}</span>
+              </div>
+            ))}
           </aside>
 
-          {/* Main Form Card */}
-          <div className={styles.formCard}>
-            <form onSubmit={handleSubmit} noValidate>
-              <div className={styles.sectionHeader}>
-                <span className={styles.sectionKicker}>Step 1</span>
-                <h3 className={styles.sectionTitle}>Requester Details</h3>
-              </div>
-            {/* User ID Field — pre-filled from JWT, read-only */}
-            <div className={styles.formGroup}>
-              <label htmlFor="userId" className={styles.label}>
-                User ID
-              </label>
-              <input
-                id="userId"
-                type="text"
-                name="userId"
-                value={form.userId}
-                readOnly
-                className={`${styles.input}`}
-                style={{ opacity: 0.7, cursor: 'not-allowed' }}
-              />
-            </div>
-
-            {/* Email Field — pre-filled from JWT, read-only */}
-            <div className={styles.formGroup}>
-              <label htmlFor="email" className={styles.label}>
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                value={form.email}
-                readOnly
-                className={`${styles.input}`}
-                style={{ opacity: 0.7, cursor: 'not-allowed' }}
-              />
-            </div>
-
-            <div className={styles.sectionHeader}>
-              <span className={styles.sectionKicker}>Step 2</span>
-              <h3 className={styles.sectionTitle}>Booking Details</h3>
-            </div>
-
-            {/* Resource Selection */}
-            <div className={styles.formGroup}>
-              <label htmlFor="resourceName" className={styles.label}>
-                Select Resource <span className={styles.required}>*</span>
-              </label>
-              <select
-                id="resourceName"
-                name="resourceName"
-                value={form.resourceName}
-                onChange={onChange}
-                className={`${styles.select} ${validationErrors.resourceName ? styles.inputError : ''}`}
-                aria-invalid={!!validationErrors.resourceName}
-                aria-describedby={validationErrors.resourceName ? 'resource-error' : undefined}
-              >
-                <option value="">— Select a resource —</option>
-                {RESOURCE_CATEGORIES.map((category) => {
-                  const categoryResources = RESOURCES.filter((resource) => resource.category === category.value);
-                  return (
-                    <optgroup key={category.value} label={category.label}>
-                      {categoryResources.map((resource) => (
-                        <option key={resource.id} value={resource.name}>
-                          {resource.name} (Capacity: {resource.capacity})
-                        </option>
-                      ))}
-                    </optgroup>
-                  );
-                })}
-              </select>
-              {validationErrors.resourceName && (
-                <span id="resource-error" className={styles.errorMessage}>
-                  {validationErrors.resourceName}
-                </span>
-              )}
-            </div>
-
-            {/* Attendee Count Field */}
-            <div className={styles.formGroup}>
-              <label htmlFor="attendeeCount" className={styles.label}>
-                Number of Attendees <span className={styles.required}>*</span>
-              </label>
-              <input
-                id="attendeeCount"
-                type="number"
-                name="attendeeCount"
-                value={form.attendeeCount}
-                onChange={onChange}
-                placeholder="e.g., 5"
-                min="1"
-                className={`${styles.input} ${validationErrors.attendeeCount ? styles.inputError : ''}`}
-                aria-invalid={!!validationErrors.attendeeCount}
-                aria-describedby={validationErrors.attendeeCount ? 'attendee-error' : undefined}
-              />
-              {validationErrors.attendeeCount && (
-                <span id="attendee-error" className={styles.errorMessage}>
-                  {validationErrors.attendeeCount}
-                </span>
-              )}
-            </div>
-
-            {/* Date/Time Selection */}
-            <div className={styles.dateTimeSection}>
-              <div className={styles.formRow}>
-                <div className={styles.dateField}>
-                  <DateTimePicker
-                    label="Start Time"
-                    value={form.startTime}
-                    onChange={(value) => {
-                      setForm(f => ({ ...f, startTime: value }));
-                      setValidationErrors(v => ({ ...v, startTime: undefined }));
-                    }}
-                  />
-                  {validationErrors.startTime && (
-                    <span className={styles.errorMessage}>{validationErrors.startTime}</span>
-                  )}
-                </div>
-
-                <div className={styles.dateField}>
-                  <DateTimePicker
-                    label="End Time"
-                    value={form.endTime}
-                    onChange={(value) => {
-                      setForm(f => ({ ...f, endTime: value }));
-                      setValidationErrors(v => ({ ...v, endTime: undefined }));
-                    }}
-                  />
-                  {validationErrors.endTime && (
-                    <span className={styles.errorMessage}>{validationErrors.endTime}</span>
-                  )}
+          {/* Form card */}
+          <div className="rounded-2xl bg-white p-6 shadow-sm border border-gray-200">
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
+              {/* Step 1 */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-blue-600 mb-0.5">Step 1</p>
+                <h3 className="text-base font-bold text-gray-800 mb-4">Requester Details</h3>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-1">User ID</label>
+                    <input id="userId" type="text" value={form.userId} readOnly
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed" />
+                  </div>
+                  <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                    <input id="email" type="email" value={form.email} readOnly
+                      className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-500 cursor-not-allowed" />
+                  </div>
                 </div>
               </div>
 
-              {/* Duration Display */}
-              {form.startTime && form.endTime && (
-                <div className={styles.durationInfo}>
-                  <span className={styles.durationLabel}>Duration:</span>
-                  <span className={styles.durationValue}>{calculateDuration()}</span>
+              {/* Step 2 */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-blue-600 mb-0.5">Step 2</p>
+                <h3 className="text-base font-bold text-gray-800 mb-4">Booking Details</h3>
+
+                {/* Resource */}
+                <div className="mb-4">
+                  <label htmlFor="resourceName" className="block text-sm font-medium text-gray-700 mb-1">
+                    Select Resource <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    id="resourceName" name="resourceName" value={form.resourceName} onChange={onChange}
+                    className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:border-blue-500 ${validationErrors.resourceName ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                  >
+                    <option value="">— Select a resource —</option>
+                    {RESOURCE_CATEGORIES.map((category) => (
+                      <optgroup key={category.value} label={category.label}>
+                        {RESOURCES.filter(r => r.category === category.value).map(r => (
+                          <option key={r.id} value={r.name}>{r.name} (Capacity: {r.capacity})</option>
+                        ))}
+                      </optgroup>
+                    ))}
+                  </select>
+                  {validationErrors.resourceName && <p className="mt-1 text-xs text-red-600">{validationErrors.resourceName}</p>}
                 </div>
-              )}
-            </div>
 
-            {/* Purpose Field */}
-            <div className={styles.sectionHeader}>
-              <span className={styles.sectionKicker}>Step 3</span>
-              <h3 className={styles.sectionTitle}>Purpose & Submission</h3>
-            </div>
-            <div className={styles.formGroup}>
-              <label htmlFor="purpose" className={styles.label}>
-                Purpose
-              </label>
-              <textarea
-                id="purpose"
-                name="purpose"
-                value={form.purpose}
-                onChange={onChange}
-                placeholder="What is this booking for?"
-                className={styles.textarea}
-                rows={4}
-              />
-              <p className={styles.helpText}>
-                Provide any relevant details about your booking request to help admins make informed decisions.
-              </p>
-            </div>
+                {/* Attendees */}
+                <div className="mb-4">
+                  <label htmlFor="attendeeCount" className="block text-sm font-medium text-gray-700 mb-1">
+                    Number of Attendees <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    id="attendeeCount" type="number" name="attendeeCount" value={form.attendeeCount}
+                    onChange={onChange} placeholder="e.g., 5" min="1"
+                    className={`w-full rounded-xl border px-4 py-2.5 text-sm outline-none focus:border-blue-500 ${validationErrors.attendeeCount ? 'border-red-400 bg-red-50' : 'border-gray-300'}`}
+                  />
+                  {validationErrors.attendeeCount && <p className="mt-1 text-xs text-red-600">{validationErrors.attendeeCount}</p>}
+                </div>
 
-            {/* Submit Button */}
-            <div className={styles.buttonContainer}>
-              <button
-                type="submit"
-                className={`${styles.submitButton} ${loading ? styles.loading : ''}`}
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <span className={styles.spinner}></span>
-                    Submitting...
-                  </>
-                ) : (
-                  'Submit Booking Request'
+                {/* Date/time */}
+                <div className="grid gap-4 sm:grid-cols-2 mb-2">
+                  <div>
+                    <DateTimePicker label="Start Time" value={form.startTime}
+                      onChange={v => { setForm(f => ({ ...f, startTime: v })); setValidationErrors(e => ({ ...e, startTime: undefined })); }} />
+                    {validationErrors.startTime && <p className="mt-1 text-xs text-red-600">{validationErrors.startTime}</p>}
+                  </div>
+                  <div>
+                    <DateTimePicker label="End Time" value={form.endTime}
+                      onChange={v => { setForm(f => ({ ...f, endTime: v })); setValidationErrors(e => ({ ...e, endTime: undefined })); }} />
+                    {validationErrors.endTime && <p className="mt-1 text-xs text-red-600">{validationErrors.endTime}</p>}
+                  </div>
+                </div>
+                {form.startTime && form.endTime && (
+                  <div className="rounded-lg bg-blue-50 border-l-4 border-blue-500 px-4 py-2 text-sm text-blue-700 font-medium">
+                    Duration: {calculateDuration()}
+                  </div>
                 )}
-              </button>
-              <button
-                type="button"
-                className={styles.cancelButton}
-                onClick={() => router.back()}
-                disabled={loading}
-              >
-                Cancel
-              </button>
-            </div>
+              </div>
+
+              {/* Step 3 */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-blue-600 mb-0.5">Step 3</p>
+                <h3 className="text-base font-bold text-gray-800 mb-4">Purpose & Submission</h3>
+                <div className="mb-4">
+                  <label htmlFor="purpose" className="block text-sm font-medium text-gray-700 mb-1">Purpose</label>
+                  <textarea
+                    id="purpose" name="purpose" value={form.purpose} onChange={onChange}
+                    placeholder="What is this booking for?" rows={4}
+                    className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500 resize-none"
+                  />
+                  <p className="mt-1 text-xs text-gray-400">Provide details to help admins make informed decisions.</p>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit" disabled={loading}
+                  className="flex-1 rounded-xl bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 transition flex items-center justify-center gap-2"
+                >
+                  {loading && <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />}
+                  {loading ? 'Submitting...' : 'Submit Booking Request'}
+                </button>
+                <button
+                  type="button" disabled={loading} onClick={() => router.back()}
+                  className="rounded-xl border border-gray-200 px-5 py-3 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-60 transition"
+                >
+                  Cancel
+                </button>
+              </div>
             </form>
           </div>
         </div>

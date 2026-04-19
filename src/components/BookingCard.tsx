@@ -1,12 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import StatusBadge from './StatusBadge';
 import EditBookingModal from './EditBookingModal';
 import { approveOrReject, cancelBooking } from '../services/bookingApi';
 import { useToast } from './ToastContainer';
 import axios from 'axios';
-import styles from './BookingCard.module.css';
 
 interface Booking {
   id: number;
@@ -35,6 +33,13 @@ function fmt(dt: string | undefined): string {
   return d.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+const statusConfig: Record<string, { label: string; classes: string }> = {
+  PENDING:   { label: '⏳ Pending',   classes: 'bg-amber-100 text-amber-700 border border-amber-300' },
+  APPROVED:  { label: '✅ Approved',  classes: 'bg-emerald-100 text-emerald-700 border border-emerald-300' },
+  REJECTED:  { label: '❌ Rejected',  classes: 'bg-red-100 text-red-700 border border-red-300' },
+  CANCELLED: { label: '🚫 Cancelled', classes: 'bg-gray-100 text-gray-600 border border-gray-300' },
+};
+
 export default function BookingCard({ booking, isAdmin, currentUserId, onRefresh }: BookingCardProps) {
   const [note, setNote]              = useState('');
   const [loading, setLoading]        = useState(false);
@@ -49,7 +54,7 @@ export default function BookingCard({ booking, isAdmin, currentUserId, onRefresh
   };
 
   const handleAction = async (action: string) => {
-    setLoading(true); 
+    setLoading(true);
     setError('');
     try {
       await approveOrReject(booking.id, { action, adminNote: note });
@@ -67,7 +72,7 @@ export default function BookingCard({ booking, isAdmin, currentUserId, onRefresh
 
   const handleCancel = async () => {
     if (!window.confirm('Cancel this booking?')) return;
-    setLoading(true); 
+    setLoading(true);
     setError('');
     try {
       await cancelBooking(booking.id, currentUserId);
@@ -82,78 +87,89 @@ export default function BookingCard({ booking, isAdmin, currentUserId, onRefresh
     } finally { setLoading(false); }
   };
 
+  const status = statusConfig[booking.status] ?? { label: booking.status, classes: 'bg-gray-100 text-gray-600' };
+
   return (
-    <div className={styles.bookingCard}>
+    <div className="rounded-2xl bg-white border border-gray-200 p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md hover:border-blue-300">
       {/* Header */}
-      <div className={styles.bookingHeader}>
-        <div className={styles.bookingInfo}>
-          <div className={styles.bookingId}>Booking #{booking.id}</div>
-          <h3 className={styles.bookingTitle}>{booking.resourceName}</h3>
+      <div className="flex items-start justify-between gap-4 mb-5">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">
+            Booking #{booking.id}
+          </p>
+          <h3 className="text-lg font-bold text-gray-900">{booking.resourceName}</h3>
         </div>
-        <div className={getStatusBadgeClass(booking.status)}>
-          {getStatusLabel(booking.status)}
-        </div>
+        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${status.classes}`}>
+          {status.label}
+        </span>
       </div>
 
-      {/* Meta Information */}
-      <div className={styles.bookingMeta}>
-        <div className={styles.metaItem}>
-          <div className={styles.metaLabel}>📅 Date & Time</div>
-          <div className={styles.metaValue}>{fmt(booking.startTime)} - {fmt(booking.endTime)}</div>
+      {/* Meta grid */}
+      <div className="grid grid-cols-2 gap-4 pb-5 mb-5 border-b border-gray-100 sm:grid-cols-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">📅 Date & Time</p>
+          <p className="text-sm text-gray-800 font-medium">{fmt(booking.startTime)} – {fmt(booking.endTime)}</p>
         </div>
-        <div className={styles.metaItem}>
-          <div className={styles.metaLabel}>👥 Attendees</div>
-          <div className={styles.metaValue}>{booking.attendeeCount} {booking.attendeeCount === 1 ? 'person' : 'people'}</div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">👥 Attendees</p>
+          <p className="text-sm text-gray-800 font-medium">
+            {booking.attendeeCount} {booking.attendeeCount === 1 ? 'person' : 'people'}
+          </p>
         </div>
-        <div className={styles.metaItem}>
-          <div className={styles.metaLabel}>👤 User ID</div>
-          <div className={styles.metaValue}>{booking.userId}</div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">👤 User ID</p>
+          <p className="text-sm text-gray-800 font-medium">{booking.userId}</p>
         </div>
-        <div className={styles.metaItem}>
-          <div className={styles.metaLabel}>⏰ Created</div>
-          <div className={styles.metaValue}>{fmt(booking.createdAt)}</div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">⏰ Created</p>
+          <p className="text-sm text-gray-800 font-medium">{fmt(booking.createdAt)}</p>
         </div>
       </div>
 
       {/* Purpose */}
       {booking.purpose && (
-        <div className={styles.bookingPurpose}>
-          <span className={styles.bookingPurposeLabel}>Purpose</span>
-          {booking.purpose}
+        <div className="mb-4 rounded-lg bg-gray-50 border-l-4 border-blue-500 px-4 py-3">
+          <span className="block text-xs font-semibold uppercase tracking-wide text-gray-400 mb-1">Purpose</span>
+          <p className="text-sm text-gray-700">{booking.purpose}</p>
         </div>
       )}
 
       {/* Admin Note */}
       {booking.adminNote && (
-        <div className={styles.adminNote}>
-          <span className={styles.adminNoteLabel}>Admin Note</span>
-          {booking.adminNote}
+        <div className="mb-4 rounded-lg bg-blue-50 border-l-4 border-blue-500 px-4 py-3">
+          <span className="block text-xs font-semibold uppercase tracking-wide text-blue-500 mb-1">Admin Note</span>
+          <p className="text-sm text-gray-700">{booking.adminNote}</p>
         </div>
       )}
 
-      {/* Error Message */}
-      {error && <div className={styles.errorMessage}>{error}</div>}
+      {/* Error */}
+      {error && (
+        <div className="mb-4 rounded-lg bg-red-50 border-l-4 border-red-500 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {/* Admin Actions */}
       {isAdmin && booking.status === 'PENDING' && (
         <>
           <textarea
-            className={styles.noteInput}
+            className="w-full rounded-xl border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500 resize-none mb-3"
             placeholder="Add an optional admin note..."
+            rows={2}
             value={note}
             onChange={e => setNote(e.target.value)}
           />
-          <div className={styles.bookingActions}>
-            <button 
-              className={`${styles.actionBtn} ${styles.actionBtnSuccess}`}
-              onClick={() => handleAction('APPROVE')} 
+          <div className="flex gap-2 flex-wrap">
+            <button
+              className="rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-600 disabled:opacity-60 transition"
+              onClick={() => handleAction('APPROVE')}
               disabled={loading}
             >
               ✅ Approve
             </button>
-            <button 
-              className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-              onClick={() => handleAction('REJECT')} 
+            <button
+              className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60 transition"
+              onClick={() => handleAction('REJECT')}
               disabled={loading}
             >
               ❌ Reject
@@ -165,19 +181,19 @@ export default function BookingCard({ booking, isAdmin, currentUserId, onRefresh
       {/* Student Actions */}
       {!isAdmin && currentUserId === booking.userId &&
         (booking.status === 'PENDING' || booking.status === 'APPROVED') && (
-        <div className={styles.bookingActions}>
+        <div className="flex gap-2 flex-wrap mt-4">
           {booking.status === 'PENDING' && (
-            <button 
-              className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-              onClick={() => setIsEditModalOpen(true)} 
+            <button
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60 transition"
+              onClick={() => setIsEditModalOpen(true)}
               disabled={loading}
             >
               ✏️ Edit Booking
             </button>
           )}
-          <button 
-            className={`${styles.actionBtn} ${styles.actionBtnDanger}`}
-            onClick={handleCancel} 
+          <button
+            className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60 transition"
+            onClick={handleCancel}
             disabled={loading}
           >
             🚫 Cancel Booking
@@ -193,35 +209,4 @@ export default function BookingCard({ booking, isAdmin, currentUserId, onRefresh
       />
     </div>
   );
-}
-
-function getStatusBadgeClass(status: string): string {
-  const baseClass = styles.statusBadge;
-  switch (status) {
-    case 'PENDING':
-      return `${baseClass} ${styles.statusPending}`;
-    case 'APPROVED':
-      return `${baseClass} ${styles.statusApproved}`;
-    case 'REJECTED':
-      return `${baseClass} ${styles.statusRejected}`;
-    case 'CANCELLED':
-      return `${baseClass} ${styles.statusCancelled}`;
-    default:
-      return baseClass;
-  }
-}
-
-function getStatusLabel(status: string): string {
-  switch (status) {
-    case 'PENDING':
-      return '⏳ Pending';
-    case 'APPROVED':
-      return '✅ Approved';
-    case 'REJECTED':
-      return '❌ Rejected';
-    case 'CANCELLED':
-      return '🚫 Cancelled';
-    default:
-      return status;
-  }
 }
