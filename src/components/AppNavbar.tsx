@@ -17,7 +17,6 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/create-booking",label: "+ New Booking"  },
   { href: "/my-bookings",   label: "My Bookings"    },
   { href: "/admin-panel",   label: "Admin Panel", roles: ["ROLE_ADMIN"] },
-  { href: "/admin/users",   label: "Users",       roles: ["ROLE_ADMIN"] },
 ];
 
 /**
@@ -77,13 +76,6 @@ export default function AppNavbar() {
           <span className="hidden text-sm text-gray-500 sm:block">
             {user?.email}
           </span>
-
-          <a
-            href="/profile"
-            className="hidden rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-600 transition hover:bg-gray-100 sm:block"
-          >
-            Profile
-          </a>
 
           <button
             onClick={logout}
